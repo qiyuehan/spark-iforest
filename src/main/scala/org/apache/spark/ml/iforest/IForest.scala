@@ -104,6 +104,7 @@ class IForestModel (
         Array(1 - $(contamination)), $(approxQuantileRelativeError))(0)
     }
 
+
     // set anomaly instance label 1
     val predictUDF = udf { (anomalyScore: Double) =>
       if (anomalyScore > threshold) 1.0 else 0.0
@@ -552,6 +553,7 @@ class IForest (
     * Sample features to train a tree.
     * @param data Input data to train a tree, each element is an instance.
     * @param maxFeatures The number of features to draw.
+   *  @param  random for
     * @return Tuple (sampledFeaturesDataset, featureIdxArr),
     *         featureIdxArr is an array stores the origin feature idx before the feature sampling
     */
@@ -575,8 +577,8 @@ class IForest (
       (data.toArray.map(vector => vector.asInstanceOf[DenseVector].values), Array.range(0, numFeatures))
     } else {
       // feature index for sampling features
-      val featureIdx = random.shuffle(0 to numFeatures - 1).take(subFeatures)
-
+      // modify by z2q {0 to numFeatures - 1 --->(0 to numFeatures - 1).toList
+      val featureIdx = random.shuffle((0 to numFeatures - 1).toList).take(subFeatures)
       val sampledFeatures = mutable.ArrayBuilder.make[Array[Double]]
       data.foreach(vector => {
         val sampledValues = new Array[Double](subFeatures)
@@ -597,7 +599,7 @@ class IForest (
     * @param constantFeatures an array stores constant features indices, constant features
     *                         will not be drawn
     * @param featureIdxArr an array stores the mapping from the sampled feature idx to the origin feature idx
-    * @param randomSeed random for generating iTree
+    * @param  random for generating iTree---figure by z2q
     * @return tree's root node
     */
   private[iforest] def iTree(data: Array[Array[Double]],
@@ -906,5 +908,3 @@ class IForestSummary (
 
   def numAnomalies: Long = anomalies.where(col(predictionCol) > 0).collect().length
 }
-
-
